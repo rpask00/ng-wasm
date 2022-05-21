@@ -1,0 +1,27 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "outDir": "./dist/out-tsc",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "module": "esnext",
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "importHelpers": true,
+    "target": "es5",
+    "typeRoots": ["node_modules/@types"],
+    "lib": ["es2017", "dom"],
+    "baseUrl": "src",
+    "paths": {
+      "@rf/*": ["app/rf/*"],
+      "@ar/*": ["app/ar/*"],
+      "@shared": ["app/shared/index.ts"],
+      "@shared/*": ["app/shared/*"],
+      "@resources/*": ["app/shared/resources/*"],
+      "@environments/*": ["./environments/*"],
+      "@core/*": ["app/core/*"]
+    }
+  }
+}

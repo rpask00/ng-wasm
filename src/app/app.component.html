@@ -1,0 +1,30 @@
+<div class="wrapper">
+  <div class="dashboard">
+    <mat-form-field class="example-full-width" appearance="fill">
+      <mat-label>Width</mat-label>
+      <input type="number" matInput [formControl]="width$">
+    </mat-form-field>
+    <mat-form-field class="example-full-width" appearance="fill">
+      <mat-label>Height</mat-label>
+      <input type="number" matInput [formControl]="height$">
+    </mat-form-field>
+
+    <mat-form-field class="example-full-width" appearance="fill">
+      <mat-label>Snake speed</mat-label>
+      <input type="number" matInput [formControl]="fps$">
+    </mat-form-field>
+
+    <mat-form-field class="example-full-width" appearance="fill">
+      <mat-label>Cell size</mat-label>
+      <input type="number" matInput [formControl]="cell_size$">
+    </mat-form-field>
+
+    <button
+      (click)="changeGameState()"
+      [color]="running ? 'primary' : 'warn'" mat-raised-button> {{running ? "Stop" : "Start" }}</button>
+
+  </div>
+
+
+  <canvas #canvas></canvas>
+</div>
