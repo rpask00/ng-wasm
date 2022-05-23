@@ -18,3 +18,20 @@
   }
 }
 
+
+h1 {
+  width: 400px;
+  text-align: center;
+  &.win {
+    color: green;
+
+  }
+
+  &.lost {
+    color: red;
+  }
+}
+
+.hide {
+  display: none;
+}

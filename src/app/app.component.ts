@@ -26,17 +26,18 @@ export class AppComponent implements OnInit {
 
 
   ctx: CanvasRenderingContext2D;
-  private snake: Snake;
+  snake: Snake;
   private world: World;
   private snakeCells: Uint32Array;
   private wasm: InitOutput;
-  running = false;
+  GameState = GameState;
 
   async ngOnInit() {
+
     document.body.style.backgroundColor = this.backGroundColor;
 
     this.wasm = await init();
-    this.ctx = this.canvas.nativeElement.getContext('2d')
+    this.ctx = this.canvas?.nativeElement.getContext('2d')
 
 
     this.world = World.new(this.width$.value, this.height$.value)
@@ -68,14 +69,20 @@ export class AppComponent implements OnInit {
       this.snake.change_direction(direction)
     });
 
+
     this.update()
 
     this.width$.valueChanges.subscribe(width => {
+      if (!this.snake.set_world_width(width)) {
+        this.height$.setValue(width + 1)
+      }
+
       this.resizeCanvas();
-      this.snake.set_world_width(width)
     })
     this.height$.valueChanges.subscribe(height => {
-      this.snake.set_world_height(height)
+      if (!this.snake.set_world_height(height)) {
+        this.height$.setValue(height + 1)
+      }
       this.resizeCanvas();
     })
 
@@ -169,8 +176,12 @@ export class AppComponent implements OnInit {
   }
 
   changeGameState() {
-    this.snake.set_game_state(this.running ? GameState.Stopped : GameState.Running);
-    this.running = !this.running;
+    if (this.snake.game_state == GameState.Lost || this.snake.game_state == GameState.Won) {
+      this.snake.restart_game();
+    } else {
+      this.snake.set_game_state(this.snake.game_state == GameState.Running ? GameState.Stopped : GameState.Running);
+    }
+
   }
 
 

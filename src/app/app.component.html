@@ -21,10 +21,20 @@
 
     <button
       (click)="changeGameState()"
-      [color]="running ? 'primary' : 'warn'" mat-raised-button> {{running ? "Stop" : "Start" }}</button>
+      [color]="snake?.game_state == GameState.Running ? 'primary' : 'warn'"
+      mat-raised-button> {{snake?.game_state == GameState.Running ? "Stop" : "Start" }}</button>
 
   </div>
 
 
-  <canvas #canvas></canvas>
+  <div
+    [class.hide]="snake?.game_state == GameState.Won || snake?.game_state == GameState.Lost">
+    <canvas #canvas></canvas>
+  </div>
+
+  <div [class.hide]="snake?.game_state == GameState.Running || snake?.game_state == GameState.Stopped">
+    <h1 class="won" *ngIf="snake?.game_state == GameState.Won">YOU WON</h1>
+    <h1 class="lost" *ngIf="snake?.game_state == GameState.Lost">YOU LOST</h1>
+  </div>
+
 </div>

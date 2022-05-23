@@ -32,10 +32,14 @@ pub enum Direction {
 }
 
 #[derive(PartialEq)]
+#[derive(Copy)]
+#[derive(Clone)]
 #[wasm_bindgen]
 pub enum GameState {
     Stopped,
     Running,
+    Won,
+    Lost,
 }
 
 
@@ -71,7 +75,7 @@ struct Snake {
     direction: Direction,
     next_cell: Option<Cell>,
     world: World,
-    game_state: GameState,
+    pub game_state: GameState,
 }
 
 #[wasm_bindgen]
@@ -104,6 +108,7 @@ impl Snake {
     pub fn snake_length(&self) -> usize { self.body.len() }
     pub fn head(&self) -> Cell { self.body[0].clone() }
     pub fn get_reward_cell_idx(&self) -> i32 { self.world.get_reward_cell_idx() }
+    // pub fn get_game_state(&self) -> GameState { self.game_state }
     pub fn update_position(&mut self) {
         match self.game_state {
             GameState::Stopped => return,
@@ -125,7 +130,7 @@ impl Snake {
 
                 let last_cell = self.body.last().unwrap().clone();
                 let last_index = last_cell.to_index(&self.world);
-                // self.world.board[last_index] = false;
+                self.world.board[last_index] = false;
 
 
                 for i in (1..self.length()).rev() {
@@ -140,7 +145,19 @@ impl Snake {
                     self.body.push(last_cell);
                 }
             }
+            _ => return,
         }
+    }
+
+    pub fn restart_game(&mut self) {
+        self.world.board = vec![false; self.world.size];
+
+        while self.snake_length() > 4 {
+            self.body.pop();
+            self.idx_vec.pop();
+        }
+
+        self.set_game_state(GameState::Running);
     }
 
 
@@ -172,10 +189,10 @@ impl Snake {
         self.idx_vec[0] = self.body[0].to_index(&self.world);
         let cell_index = self.body[0].to_index(&self.world);
 
-        // if self.world.board[cell_index] {
-        //     self.body.clear();
-        // }
-        // self.world.board[cell_index] = true;
+        match self.world.board[cell_index] {
+            true => self.game_state = GameState::Lost,
+            false => self.world.board[cell_index] = true
+        }
     }
 
     pub fn set_game_state(&mut self, game_state: GameState) {
@@ -196,28 +213,38 @@ impl Snake {
     }
 
 
-    pub fn set_world_width(&mut self, width: usize) {
-        console::log_1(&"set_world_width".into());
+    pub fn set_world_width(&mut self, width: usize) -> bool {
+        let snake_in_removed_zone = self.check_if_snake_is_in_removed_zone(width, self.world.height);
 
-        self.world.width = width;
-        self.regenerate_reward_cell_if_exist();
+        if !snake_in_removed_zone {
+            self.world.set_world_width(width);
+        }
+
+        return !snake_in_removed_zone;
     }
 
-    pub fn set_world_height(&mut self, height: usize) {
-        console::log_1(&"set_world_height".into());
+    pub fn set_world_height(&mut self, height: usize) -> bool {
+        let snake_in_removed_zone = self.check_if_snake_is_in_removed_zone(self.world.width, height);
 
-        self.world.height = height;
-        self.regenerate_reward_cell_if_exist();
+        if !snake_in_removed_zone {
+            self.world.set_world_height(height);
+        }
+
+        return !snake_in_removed_zone;
     }
 
-    fn regenerate_reward_cell_if_exist(&mut self) {
-        console::log_1(&"regenerate_reward_cell_if_exist".into());
-        match self.world.reward_cell {
-            None => {}
-            Some(_) => {
-                self.world.reward_cell = Some(self.world.generate_reward_cell());
+    fn check_if_snake_is_in_removed_zone(&self, width: usize, height: usize) -> bool {
+        for cell in self.body.iter() {
+            if cell.y == height || cell.x == width {
+                // console::log_1(&format!("{}", self.check_if_snake_is_in_removed_zone(self.world.width, height)).into());
+                console::log_1(&"true".into());
+
+                return true;
             }
         }
+        console::log_1(&"False".into());
+
+        false
     }
 }
 
@@ -227,7 +254,7 @@ pub struct World {
     width: usize,
     height: usize,
     size: usize,
-    // board: Vec<bool>,
+    board: Vec<bool>,
     reward_cell: Option<Cell>,
 
 }
@@ -241,7 +268,7 @@ impl World {
             width,
             height,
             size,
-            // board: vec![false; size],
+            board: vec![false; size],
             reward_cell: None,
         }
     }
@@ -252,12 +279,12 @@ impl World {
             let x = rng.gen_range(0..self.width);
             let y = rng.gen_range(0..self.height);
 
-            // if !self.board[y * self.width + x] {
+            if !self.board[y * self.width + x] {
                 return Cell {
                     x,
                     y,
                 };
-            // }
+            }
         }
     }
 
@@ -268,6 +295,49 @@ impl World {
         }
     }
 
+
+    pub fn set_world_width(&mut self, width: usize) {
+        if width < self.width {
+            for i in 1..(self.height + 1) {
+                if self.board[i * self.width - 1] {
+                    return;
+                }
+            }
+        }
+
+        self.width = width;
+        self.size = self.width * self.height;
+        self.regenerate_reward_cell_if_exist();
+        self.redeclare_board();
+    }
+
+    pub fn set_world_height(&mut self, height: usize) {
+        self.height = height;
+        self.size = self.width * self.height;
+        self.regenerate_reward_cell_if_exist();
+        self.redeclare_board();
+    }
+
+    fn regenerate_reward_cell_if_exist(&mut self) {
+        match self.reward_cell {
+            None => {}
+            Some(_) => self.reward_cell = Some(self.generate_reward_cell()),
+        }
+    }
+
+    fn redeclare_board(&mut self) {
+        let mut new_board = vec![false; self.size];
+
+        for (i, cell) in self.board.iter().enumerate() {
+            if i == self.size {
+                break;
+            }
+
+            new_board[i] = *cell;
+        }
+
+        self.board = new_board;
+    }
 
     pub fn width(&self) -> usize { self.width }
     pub fn height(&self) -> usize { self.height }
