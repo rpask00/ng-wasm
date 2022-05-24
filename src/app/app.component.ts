@@ -74,7 +74,7 @@ export class AppComponent implements OnInit {
 
     this.width$.valueChanges.subscribe(width => {
       if (!this.snake.set_world_width(width)) {
-        this.height$.setValue(width + 1)
+        this.width$.setValue(width + 1)
       }
 
       this.resizeCanvas();

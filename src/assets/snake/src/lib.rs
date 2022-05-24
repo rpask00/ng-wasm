@@ -150,13 +150,12 @@ impl Snake {
     }
 
     pub fn restart_game(&mut self) {
-        self.world.board = vec![false; self.world.size];
-
         while self.snake_length() > 4 {
             self.body.pop();
             self.idx_vec.pop();
         }
 
+        self.world.resize_board();
         self.set_game_state(GameState::Running);
     }
 
@@ -218,6 +217,16 @@ impl Snake {
 
         if !snake_in_removed_zone {
             self.world.set_world_width(width);
+            self.idx_vec = self.body.clone().iter().map(|cell| cell.to_index(&self.world)).collect();
+
+            for cell in self.world.board.iter_mut() {
+                *cell = false;
+            }
+
+            for cell in self.body.iter() {
+                let cell_idx = cell.to_index(&self.world);
+                self.world.board[cell_idx] = true;
+            }
         }
 
         return !snake_in_removed_zone;
@@ -308,14 +317,14 @@ impl World {
         self.width = width;
         self.size = self.width * self.height;
         self.regenerate_reward_cell_if_exist();
-        self.redeclare_board();
+        self.resize_board();
     }
 
     pub fn set_world_height(&mut self, height: usize) {
         self.height = height;
         self.size = self.width * self.height;
         self.regenerate_reward_cell_if_exist();
-        self.redeclare_board();
+        self.resize_board();
     }
 
     fn regenerate_reward_cell_if_exist(&mut self) {
@@ -325,7 +334,7 @@ impl World {
         }
     }
 
-    fn redeclare_board(&mut self) {
+    fn resize_board(&mut self) {
         let mut new_board = vec![false; self.size];
 
         for (i, cell) in self.board.iter().enumerate() {
@@ -338,6 +347,17 @@ impl World {
 
         self.board = new_board;
     }
+
+    fn redeclare_board(&mut self, snake: &Snake) {
+        let mut new_board = vec![false; self.size];
+
+        for cell in snake.body.iter() {
+            new_board[cell.to_index(&self)] = true;
+        }
+
+        self.board = new_board;
+    }
+
 
     pub fn width(&self) -> usize { self.width }
     pub fn height(&self) -> usize { self.height }
