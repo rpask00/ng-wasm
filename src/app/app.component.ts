@@ -1,5 +1,5 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import init, {Direction, GameState, InitOutput, Snake, World} from "../assets/snake/pkg"
+import init, {Direction, GameState, InitOutput, Snake, World} from "assets/snake/pkg"
 import {FormControl} from "@angular/forms";
 
 
